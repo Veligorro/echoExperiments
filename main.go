@@ -82,26 +82,17 @@ func loginHeader(c echo.Context) error {
 		cookie.Value = "SomethingElse"
 		cookie.Expires = time.Now().Add(72 * time.Hour)
 		c.SetCookie(cookie)
-		return c.String(http.StatusOK, "FBI!!! OPEN DOOR")
+		return c.String(http.StatusOK, "new COOKIE!!! NOM NOM NOM")
 	}
 	return c.String(http.StatusUnauthorized, "incorrect password or username")
 }
 
-//func writeCookie(c echo.Context) error {
-//	cookie := new(http.Cookie)
-//	cookie.Name = "username"
-//	cookie.Value = "jon"
-//	cookie.Expires = time.Now().Add(24 * time.Hour)
-//	c.SetCookie(cookie)
-//	return c.String(http.StatusOK, "write a cookie")
-//}
-
 func main() {
 	e := echo.New()
-	g := e.Group("/admin") // в строку адреса добавляется значение группы
-	cookie := e.Group("/cookie")
+	g := e.Group("/admin")       // в строку адреса добавляется значение группы
+	cookie := e.Group("/cookie") // группируем запросы
 
-	// показывает кастомный лог запросов к серверу
+	// показывает кастомный лог запросов к серверу при  любом обращении к адресу содержащему /admin/...
 	g.Use(middleware.LoggerWithConfig(middleware.LoggerConfig{
 		//Format: `[${time_rfc3339} ${status} ${method} ${host} ${path} ]` + "\n",
 		Format: `yaml:${time_rfc3339} ${status} ${method} ${host} ${path}` + "\n",
@@ -109,7 +100,7 @@ func main() {
 
 	// Валидация. для валидации стоит завести БД с данными о пользователях, например таблица (id,LogName, password, rightsGroup)
 	// таким образом если LogName == true и связанный с ним password == true, то применяем опеределенную группу прав, например admin или user
-	// в данном случае логин и пароль определен самой функцией
+	// пароль запрашивается при любом обращении к групе запросов в данном случае логин и пароль определен самой функцией
 	g.Use(middleware.BasicAuth(func(username, password string, c echo.Context) (bool, error) {
 		if username == "admin" && password == "admin1234" {
 			return true, nil
@@ -117,8 +108,8 @@ func main() {
 		return false, fmt.Errorf("incorrect password or username")
 	}))
 	g.Use(ChangeHeaderData)
-	cookie.GET("/set_Cookie", loginHeader)
-	g.GET("/main", mainAdmin) // admin/main
+	cookie.GET("/set_Cookie", loginHeader) // localhost:8080/coockie/set_Cookie
+	g.GET("/main", mainAdmin)              // admin/main
 	e.POST("/user", addUser)
 	e.POST("/user3/", addUserThird)
 	e.POST("/user2/", addUserSec)
